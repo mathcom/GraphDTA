@@ -1,3 +1,6 @@
+__pycache__
+models/__pycache__
+
 data/davis_test.csv
 data/davis_train.csv
 data/kiba_test.csv
@@ -7,3 +10,5 @@ data/processed/davis_train.pt
 data/processed/kiba_test.pt
 data/processed/kiba_train.pt
 
+model_*
+result_*

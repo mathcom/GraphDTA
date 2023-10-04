@@ -1,0 +1,17 @@
+name: graphdta
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - python=3.8
+  - cudatoolkit=11.3
+  - pytorch=1.12.1=py3.8_cuda11.3_cudnn8.3.2_0
+  - pyg::pyg
+  - rdkit
+  - jupyter
+  - matplotlib
+  - seaborn
+  - torchvision
+  - requests
+  - tqdm
+  - networkx
