@@ -12,7 +12,7 @@ from utils import *
 
 
 ## training function at each epoch
-def train(model, device, train_loader, optimizer, epoch):
+def train(model, device, train_loader, optimizer, loss_fn, epoch, log_interval):
     print(f'Training on {len(train_loader.dataset)} samples...')
     model.train()
     
@@ -25,12 +25,13 @@ def train(model, device, train_loader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         
-        if batch_idx % LOG_INTERVAL == 0:
-            print('Train epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch,
-                                                                           batch_idx * len(data.x),
-                                                                           len(train_loader.dataset),
-                                                                           100. * batch_idx / len(train_loader),
-                                                                           loss.item()))
+        if batch_idx % log_interval == 0:
+            print(f'[INFO] train epoch: {epoch:06d} ({int(100*batch_idx/len(train_loader)):02d}%)\tLoss: {loss.item():.6f}')
+            #print('Train epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(epoch,
+            #                                                               batch_idx * train_loader.batch_size,
+            #                                                               len(train_loader.dataset),
+            #                                                               100. * batch_idx / len(train_loader),
+            #                                                               loss.item()))
 
 def predicting(model, device, loader):
     model.eval()
@@ -96,7 +97,7 @@ def main():
             result_file_name = f'result_{model_st}_{dataset}.csv'
             
             for epoch in range(NUM_EPOCHS):
-                train(model, device, train_loader, optimizer, epoch+1)
+                train(model, device, train_loader, optimizer, loss_fn, epoch+1, LOG_INTERVAL)
                 
                 G, P = predicting(model, device, test_loader)
                 
