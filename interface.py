@@ -10,6 +10,10 @@ from models.gat_gcn import GAT_GCN
 from models.gcn import GCNNet
 from models.ginconv import GINConvNet
 from create_data import smile_to_graph
+from training import train, predicting
+from utils import rmse, mse, pearson, spearman, ci
+
+
 
 
 class EvaluateDataset(Dataset):
@@ -67,6 +71,8 @@ class EvaluateDataset(Dataset):
         return x  
 
 
+
+
 class GraphDTA:
     def __init__(self, modeltype, n_output=1, num_features_xd=78, num_features_xt=25, n_filters=32, embed_dim=128, output_dim=128, dropout=0.2, device=None):
         ## parameters
@@ -113,8 +119,79 @@ class GraphDTA:
 
         return res.numpy().flatten()
         
+        
+        
 
+class Trainer:
+    def __init__(self, model, device):
+        self.model = model
+        self.device = device
+        
+        
+    def train(self, train_data, test_data, valid_data=None,
+              batch_size=512, n_epochs=1000, learning_rate=5e-4, log_interval=20,
+              ckpt_dir=os.path.join('.', 'ckpt'), ckpt_filename='modeltype_dataname'):
 
+        ## valid
+        if valid_data is None:
+            valid_data = test_data
+            
+        print(f'[INFO] len(train_data):{len(train_data)}')
+        print(f'[INFO] len(valid_data):{len(valid_data)}')
+        print(f'[INFO] len(test_data):{len(test_data)}')
+        
+        ## make data PyTorch mini-batch processing ready
+        train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+        valid_loader = DataLoader(valid_data, batch_size=batch_size, shuffle=False)
+        test_loader  = DataLoader(test_data,  batch_size=batch_size, shuffle=False)
+        
+        ## set envs
+        loss_fn = torch.nn.MSELoss()
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=learning_rate)
+        
+        ## init
+        best_mse = 1000
+        best_ci = 0
+        best_epoch = 0
+        
+        ## init ckpt
+        model_filepath = os.path.join(ckpt_dir, f'{ckpt_filename}_best.pt')
+        result_filepath = os.path.join(ckpt_dir, f'{ckpt_filename}_best_history.csv')
+        with open(result_filepath, 'w') as f:
+            f.write('EPOCH,RMSE,MSE,PEARSON,SPEARMAN,CI\n')
+        
+        ## do
+        for epoch in range(1, n_epochs+1):
+            train(self.model, self.device, train_loader, optimizer, loss_fn, epoch, log_interval)
+            
+            ## predict valid data
+            valid_mse = mse(*predicting(self.model, self.device, valid_loader))
+            
+            if valid_mse < best_mse:
+                
+                
+                ## best update
+                best_epoch = epoch
+                best_mse = valid_mse
+                torch.save(self.model.state_dict(), model_filepath)
+                
+                ## predict test data
+                G,P = predicting(self.model, self.device, test_loader)
+                ret = [rmse(G, P), mse(G, P), pearson(G, P), spearman(G, P), ci(G, P)]
+                
+                ## write logs
+                with open(result_filepath, 'a') as f:
+                    f.write(f'{epoch:06d},{",".join(map(str, ret))}\n')
+                    
+                ## print log
+                best_test_mse = ret[1]
+                best_test_ci = ret[-1]
+                print(f'[INFO] rmse improved at epoch {best_epoch}; best_test_mse={best_test_mse:.3f}; best_test_ci={best_test_ci:.3f}')
+            else:
+                print(f'[INFO] No improvement since epoch {best_epoch}; best_test_mse={best_test_mse:.3f}; best_test_ci={best_test_ci:.3f}')
+                
+ 
+ 
 def main():
     drugs = {
         'abt737':'CN(C)CCC(CSC1=CC=CC=C1)NC2=C(C=C(C=C2)S(=O)(=O)NC(=O)C3=CC=C(C=C3)N4CCN(CC4)CC5=CC=CC=C5C6=CC=C(C=C6)Cl)[N+](=O)[O-]',
