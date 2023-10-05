@@ -1,5 +1,6 @@
 __pycache__
 models/__pycache__
+.ipynb_checkpoints
 
 data/davis_test.csv
 data/davis_train.csv
