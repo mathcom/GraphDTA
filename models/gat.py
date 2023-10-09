@@ -22,7 +22,7 @@ class GATNet(torch.nn.Module):
         self.fc_xt1 = nn.Linear(32*121, output_dim)
 
         # combined layers
-        self.fc1 = nn.Linear(256, 1024)
+        self.fc1 = nn.Linear(output_dim*2, 1024)
         self.fc2 = nn.Linear(1024, 256)
         self.out = nn.Linear(256, n_output)
 

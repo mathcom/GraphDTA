@@ -45,7 +45,7 @@ class GINConvNet(torch.nn.Module):
         self.fc1_xt = nn.Linear(32*121, output_dim)
 
         # combined layers
-        self.fc1 = nn.Linear(256, 1024)
+        self.fc1 = nn.Linear(output_dim*2, 1024)
         self.fc2 = nn.Linear(1024, 256)
         self.out = nn.Linear(256, self.n_output)        # n_output = 1 for regression task
 
